@@ -20,7 +20,7 @@ import { callServer } from '../../app-call-server'
 import { PrefetchKind } from './router-reducer-types'
 
 type FetchServerResponseResult = [
-  FlightData: FlightData,
+  flightData: FlightData | null,
   canonicalUrlOverride: URL | undefined
 ]
 
