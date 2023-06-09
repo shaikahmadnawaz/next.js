@@ -20,7 +20,7 @@ import { callServer } from '../../app-call-server'
 import { PrefetchKind } from './router-reducer-types'
 
 type FetchServerResponseResult = [
-  flightData: FlightData | null,
+  flightData: FlightData,
   canonicalUrlOverride: URL | undefined
 ]
 
@@ -114,7 +114,7 @@ export async function fetchServerResponse(
       return doMpaNavigation(res.url)
     }
 
-    return [flightData, canonicalUrl]
+    return [flightData!, canonicalUrl]
   } catch (err) {
     console.error(
       'Failed to fetch RSC payload. Falling back to browser navigation.',
