@@ -19,10 +19,6 @@ import { urlToUrlWithoutFlightMarker } from '../app-router'
 import { callServer } from '../../app-call-server'
 import { PrefetchKind } from './router-reducer-types'
 
-/**
- * Fetch the flight data for the provided url. Takes in the current router state to decide what to render server-side.
- */
-
 type FetchServerResponseResult = [
   FlightData: FlightData,
   canonicalUrlOverride: URL | undefined
@@ -32,6 +28,9 @@ function doMpaNavigation(url: string): FetchServerResponseResult {
   return [urlToUrlWithoutFlightMarker(url).toString(), undefined]
 }
 
+/**
+ * Fetch the flight data for the provided url. Takes in the current router state to decide what to render server-side.
+ */
 export async function fetchServerResponse(
   url: URL,
   flightRouterState: FlightRouterState,
