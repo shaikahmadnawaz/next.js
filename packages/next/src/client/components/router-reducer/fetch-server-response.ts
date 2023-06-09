@@ -6,6 +6,7 @@ import { createFromFetch } from 'react-server-dom-webpack/client'
 import type {
   FlightRouterState,
   FlightData,
+  NextFlightData,
 } from '../../../server/app-render/types'
 import {
   NEXT_ROUTER_PREFETCH,
@@ -22,12 +23,22 @@ import { PrefetchKind } from './router-reducer-types'
  * Fetch the flight data for the provided url. Takes in the current router state to decide what to render server-side.
  */
 
+type FetchServerResponseResult = [
+  FlightData: FlightData,
+  canonicalUrlOverride: URL | undefined
+]
+
+function doMpaNavigation(url: string): FetchServerResponseResult {
+  return [urlToUrlWithoutFlightMarker(url).toString(), undefined]
+}
+
 export async function fetchServerResponse(
   url: URL,
   flightRouterState: FlightRouterState,
   nextUrl: string | null,
+  currentBuildId: string,
   prefetchKind?: PrefetchKind
-): Promise<[FlightData: FlightData, canonicalUrlOverride: URL | undefined]> {
+): Promise<FetchServerResponseResult> {
   const headers: {
     [RSC]: '1'
     [NEXT_ROUTER_STATE_TREE]: string
@@ -89,13 +100,21 @@ export async function fetchServerResponse(
     // If fetch returns something different than flight response handle it like a mpa navigation
     // If the fetch was not 200, we also handle it like a mpa navigation
     if (!isFlightResponse || !res.ok) {
-      return [res.url, undefined]
+      return doMpaNavigation(res.url)
     }
 
     // Handle the `fetch` readable stream that can be unwrapped by `React.use`.
-    const flightData: FlightData = await createFromFetch(Promise.resolve(res), {
-      callServer,
-    })
+    const [buildId, flightData]: NextFlightData = await createFromFetch(
+      Promise.resolve(res),
+      {
+        callServer,
+      }
+    )
+
+    if (currentBuildId !== buildId) {
+      return doMpaNavigation(res.url)
+    }
+
     return [flightData, canonicalUrl]
   } catch (err) {
     console.error(

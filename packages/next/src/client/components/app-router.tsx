@@ -65,7 +65,27 @@ export function getServerActionDispatcher() {
 
 export function urlToUrlWithoutFlightMarker(url: string): URL {
   const urlWithoutFlightParameters = new URL(url, location.origin)
-  // TODO-APP: handle .rsc for static export case
+  if (process.env.NODE_ENV === 'production') {
+    if (process.env.__NEXT_CONFIG_OUTPUT === 'export') {
+      if (urlWithoutFlightParameters.pathname.endsWith('/index.txt')) {
+        // Slice off `/index.txt` from the end of the pathname
+        urlWithoutFlightParameters.pathname =
+          urlWithoutFlightParameters.pathname.slice(
+            0,
+            // 10 is the length of `/index.txt`
+            -10
+          )
+      } else {
+        // Slice off `.txt` from the end of the pathname
+        urlWithoutFlightParameters.pathname =
+          urlWithoutFlightParameters.pathname.slice(
+            0,
+            // 4 is the length of `.txt`
+            -4
+          )
+      }
+    }
+  }
   return urlWithoutFlightParameters
 }
 
@@ -81,6 +101,7 @@ type AppRouterProps = Omit<
   Omit<InitialRouterStateParameters, 'isServer' | 'location'>,
   'initialParallelRoutes'
 > & {
+  buildId: string
   initialHead: ReactNode
   assetPrefix: string
   // Top level boundaries props
@@ -122,6 +143,7 @@ function HistoryUpdater({ tree, pushRef, canonicalUrl, sync }: any) {
  * The global router that wraps the application components.
  */
 function Router({
+  buildId,
   initialHead,
   initialTree,
   initialCanonicalUrl,
@@ -134,6 +156,7 @@ function Router({
   const initialState = useMemo(
     () =>
       createInitialRouterState({
+        buildId,
         children,
         initialCanonicalUrl,
         initialTree,
@@ -142,7 +165,7 @@ function Router({
         location: !isServer ? window.location : null,
         initialHead,
       }),
-    [children, initialCanonicalUrl, initialTree, initialHead]
+    [buildId, children, initialCanonicalUrl, initialTree, initialHead]
   )
   const [
     {
@@ -443,6 +466,7 @@ function Router({
         <SearchParamsContext.Provider value={searchParams}>
           <GlobalLayoutRouterContext.Provider
             value={{
+              buildId,
               changeByServerResponse,
               tree,
               focusAndScrollRef,
